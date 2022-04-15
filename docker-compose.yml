@@ -1,0 +1,72 @@
+version: '3'
+services:
+  rabbitmq:
+    image: rabbitmq:management
+    container_name: 'rabbitmq'
+    ports:
+    - "4369:4369"
+    - "5671:5671"
+    - "5672:5672"
+    - "25672:25672"
+    - "15671:15671"
+    - "15672:15672"
+    healthcheck:
+      test: "exit 0"
+  database:
+    image: mongo
+    container_name: 'mongodb'
+    depends_on: 
+      - rabbitmq 
+    volumes: 
+      - my_data:/data/db 
+    ports:
+      - "27017:27017"
+    healthcheck:
+      test: "exit 0"
+  admin_service_api:
+    build: 
+      context: ./admin_service_api
+      dockerfile: Dockerfile
+    volumes: 
+      - /app/node_modules
+      - ./admin_service_api:/app 
+    ports: 
+      - "5000:5000"
+    restart: on-failure
+    depends_on:
+      rabbitmq: 
+       condition: service_started
+      database: 
+       condition: service_healthy
+  student_service_api:
+    build: 
+      context: ./student_service_api
+      dockerfile: Dockerfile
+    volumes: 
+      - /app/node_modules
+      - ./student_service_api:/app 
+    ports: 
+      - "5001:5001"
+    restart: on-failure
+    depends_on:
+      rabbitmq: 
+       condition: service_started
+      database: 
+       condition: service_healthy
+  teacher_service_api:
+    build: 
+      context: ./teacher_service_api
+      dockerfile: Dockerfile
+    volumes: 
+      - /app/node_modules
+      - ./teacher_service_api:/app 
+    ports: 
+      - "5003:5003"
+    restart: on-failure
+    depends_on:
+      rabbitmq: 
+       condition: service_started
+      database: 
+       condition: service_healthy
+volumes: 
+     my_data:
